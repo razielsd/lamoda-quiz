@@ -1,6 +1,5 @@
-#Lamoda Quiz
-
-##Установка
+# Lamoda Quiz
+## Установка
  * git clone https://github.com/razielsd/lamoda-quiz.git
  * docker-compose up
  * docker-compose run php-fpm  bash
