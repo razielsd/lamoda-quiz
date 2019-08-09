@@ -1,0 +1,13 @@
+#index:
+#    path: /
+#    controller: App\Controller\DefaultController::index
+container_add:
+    path: /container
+    methods: post
+    controller: App\Controller\ContainerController::actionAddContainer
+
+container_get:
+    path: /container
+    methods: get
+    controller: App\Controller\ContainerController::actionGetContainerByIndex
+
