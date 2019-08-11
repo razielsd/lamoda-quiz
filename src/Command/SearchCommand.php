@@ -133,8 +133,7 @@ class SearchCommand extends Command
 
     protected function printResult(ContainerList $containerList)
     {
-        $this->output->writeln('Items: ' . $containerList->getUniqIdCount());
-        $this->output->writeln('Containers: ' . $containerList->count());
+        $this->output->writeln('Unique items: ' . $containerList->getUniqIdCount());
         //проверяем, что все товары действительно нашли
         $map = $containerList->getUniqIdMap();
         for ($i = 1;$i <= 100;$i++) {
@@ -144,8 +143,9 @@ class SearchCommand extends Command
         }
         //Проверяем, что все товары действительно были в контейнерах
         $itemIdListEmpty = array_filter($this->statId, function ($id) {return empty($id);});
-        $this->output->writeln('Not found item Id (in stream): ' . join(', ', $itemIdListEmpty));
-
+        $streamIdsTxt = empty($itemIdListEmpty) ? 'all found' : join(', ', $itemIdListEmpty);
+        $this->output->writeln('Not found item Id (in stream): ' . $streamIdsTxt);
+        $this->output->writeln('Containers: ' . $containerList->count());
         /** @var Container $container */
         foreach ($containerList as $container) {
             $this->output->writeln(
