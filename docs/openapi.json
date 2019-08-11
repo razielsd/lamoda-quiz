@@ -1,0 +1,176 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "title" : "Lamoda Quiz API",
+    "description" : "Lamoda Quiz API",
+    "contact" : {
+      "email" : "zrandom@mail.ru"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version" : "1.0.0"
+  },
+  "servers" : [ {
+    "url" : "https://virtserver.swaggerhub.com/razi1/LamodaQuiz/1.0.0",
+    "description" : "SwaggerHub API Auto Mocking"
+  } ],
+  "paths" : {
+    "/container/slice" : {
+      "get" : {
+        "summary" : "get container list",
+        "description" : "get containers list",
+        "operationId" : "getContainersSlice",
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "containers count",
+          "required" : true,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "integer"
+          }
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "containers count",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "containe found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ContainerSlice"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad input parameter"
+          },
+          "404" : {
+            "description" : "container not found"
+          }
+        }
+      }
+    },
+    "/container" : {
+      "get" : {
+        "summary" : "get container by id",
+        "description" : "get container by id",
+        "operationId" : "getContainerById",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "query",
+          "description" : "container id",
+          "required" : true,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "container found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ContainerSlice"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad input parameter"
+          },
+          "404" : {
+            "description" : "container not found"
+          }
+        }
+      },
+      "post" : {
+        "summary" : "add container",
+        "description" : "add container",
+        "requestBody" : {
+          "description" : "Inventory item to add",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Container"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "container created"
+          },
+          "400" : {
+            "description" : "invalid input, object invalid"
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "ContainerSlice" : {
+        "required" : [ "items", "title" ],
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Item"
+            }
+          }
+        }
+      },
+      "Item" : {
+        "required" : [ "id", "title" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        }
+      },
+      "Container" : {
+        "required" : [ "items", "title" ],
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Item"
+            }
+          }
+        }
+      }
+    }
+  }
+}
