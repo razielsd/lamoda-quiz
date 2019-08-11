@@ -6,8 +6,13 @@ container_add:
     methods: post
     controller: App\Controller\ContainerController::actionAddContainer
 
-container_get:
-    path: /container
+container_slice:
+    path: /container/slice
     methods: get
-    controller: App\Controller\ContainerController::actionGetContainerByIndex
+    controller: App\Controller\ContainerController::actionGetContainerSlice
+
+container_get_by_id:
+    path: /container/
+    methods: get
+    controller: App\Controller\ContainerController::actionGetContainerById
 

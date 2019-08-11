@@ -1,7 +1,5 @@
 <?php
 
-require_once dirname(__DIR__, 2) . '/config/bootstrap.php';
-
 use PHPUnit\Framework\TestCase;
 use \App\ApiClient\Client;
 
@@ -24,7 +22,6 @@ class ApiTest extends TestCase
         $this->assertGreaterThan(0, $id);
     }
 
-
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
@@ -39,14 +36,12 @@ class ApiTest extends TestCase
         $this->assertEquals($container['title'], $stored[$id]['title']);
     }
 
-
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function testSliceContainer()
     {
         $size = 5;
-        //если у нас гарантированно не пустая база - заполнять не обязательно, но ... я иногда базу очищаю
         $this->fillStorage($size);
         $loaded = $this->getClient()->getContainerSlice($size);
         $prev = -1;
@@ -57,27 +52,28 @@ class ApiTest extends TestCase
         }
     }
 
-
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function testSliceOffsetContainer()
     {
-        $size = 15;
-        $this->fillStorage($size);
         $limit = 10;
-        $offset =$size - $limit;
-        $fromBegin = $this->getClient()->getContainerSlice($limit + $offset, 0);
+        $offset = 5;
+        $this->fillStorage($limit + $offset);
+
+        $fromBegin = $this->getClient()->getContainerSlice($limit, 0);
         $fromOffset = $this->getClient()->getContainerSlice($limit, $offset);
-        $this->assertEquals($limit + $offset, count($fromBegin), 'Bad count containers from start');
+        $this->assertEquals($limit, count($fromBegin), 'Bad count containers from start');
         $this->assertEquals($limit, count($fromOffset), 'Bad count containers from offset');
+        $beginIds = array_keys(array_slice($fromBegin, $offset, $limit - $offset, true));
+        $offsetIds = array_keys(array_slice($fromOffset, 0, $limit - $offset, true));
+
         $this->assertEquals(
-            join(', ', array_keys($fromOffset)),
-            join(', ', array_keys(array_slice($fromBegin, $offset, $limit, true))),
+            join(', ', $offsetIds),
+            join(', ', $beginIds),
             'Bad work offset'
         );
     }
-
 
     /**
      * @throws \GuzzleHttp\Exception\GuzzleException
@@ -89,7 +85,6 @@ class ApiTest extends TestCase
         $this->assertEmpty($loaded);
     }
 
-
     /**
      * @return Client
      */
@@ -100,7 +95,6 @@ class ApiTest extends TestCase
         }
         return $this->client;
     }
-
 
     /**
      * @return array
@@ -118,7 +112,6 @@ class ApiTest extends TestCase
         }
         return ['title' => 'Container ' . mt_rand(1000, 9999), 'items' => $items];
     }
-
 
     /**
      * @param int $count

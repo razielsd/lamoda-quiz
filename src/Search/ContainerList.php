@@ -1,14 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Search;
 
 class ContainerList implements \Iterator, \Countable
 {
+    /**
+     * @var array
+     */
     protected $containerList = [];
+    /**
+     * @var int
+     */
     protected $cursor = 0;
+    /**
+     * @var array
+     */
     protected $map = [];
 
 
+    /**
+     * @param Container $container
+     * @return ContainerList
+     */
     public function add(Container $container): self
     {
         $this->containerList[$container->getId()] = $container;
@@ -18,7 +33,10 @@ class ContainerList implements \Iterator, \Countable
         return $this;
     }
 
-
+    /**
+     * @param int $id
+     * @return ContainerList
+     */
     public function remove(int $id): self
     {
         if (!isset($this->containerList[$id])) {
@@ -33,7 +51,10 @@ class ContainerList implements \Iterator, \Countable
         return $this;
     }
 
-
+    /**
+     * @param Container $container
+     * @return array
+     */
     public function getIntersection(Container $container): array
     {
         $ids = $container->getItemIdList();
@@ -47,13 +68,17 @@ class ContainerList implements \Iterator, \Countable
         return $result;
     }
 
-
+    /**
+     * @return int
+     */
     public function getUniqIdCount(): int
     {
         return count($this->map);
     }
 
-
+    /**
+     * @return array
+     */
     public function getUniqIdMap(): array
     {
         return $this->map;
@@ -90,7 +115,9 @@ class ContainerList implements \Iterator, \Countable
         return $var;
     }
 
-
+    /**
+     * @return int
+     */
     public function count(): int
     {
         return count($this->containerList);

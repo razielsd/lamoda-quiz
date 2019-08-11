@@ -18,13 +18,12 @@ class ContainerController extends AbstractController
      * @param Request $request
      * @return Response
      */
-    public function actionGetContainerByIndex(Request $request)
+    public function actionGetContainerSlice(Request $request)
     {
         $limit = (int) $request->get('limit', 1);
         $offset = (int) $request->get('offset', 0);
-
         try {
-            $data = (new Storage())->getContainer($limit, $offset);
+            $data = (new Storage())->getContainerSlice($limit, $offset);
             $containerList = [];
             foreach ($data as $row) {
                 $container = json_decode($row['container'], true);
@@ -41,6 +40,34 @@ class ContainerController extends AbstractController
         );
     }
 
+    /**
+     * Получение списка контейнеров
+     *
+     * @param Request $request
+     * @return Response
+     */
+    public function actionGetContainerById(Request $request)
+    {
+        $id = (int) $request->get('id', 1);
+
+        try {
+            $row = (new Storage())->getContainerById($id);
+            if (!$row) {
+                return $this->createError(
+                    'Container not found', Response::HTTP_NOT_FOUND
+                );
+            }
+            $container = json_decode($row['container'], true);
+            $container['id'] = $row['id'];
+        } catch (Exception $e) {
+            return $this->createError(
+                'Error getting container: ' . $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+        return new Response(
+            json_encode([$id => $container])
+        );
+    }
 
     /**
      * Создание контейнера
@@ -63,7 +90,7 @@ class ContainerController extends AbstractController
         // но в ней есть проблемы со вложеностью элементов и давно не обновлялась
 
         try {
-            $id = (new Storage())->addContainer($container);
+            $id = (new Storage())->storeContainer($container);
         } catch (Exception $e) {
             return $this->createError(
                 'Error saving container', Response::HTTP_INTERNAL_SERVER_ERROR
@@ -74,7 +101,11 @@ class ContainerController extends AbstractController
         );
     }
 
-
+    /**
+     * @param $message
+     * @param int $code
+     * @return Response
+     */
     protected function createError($message, $code = Response::HTTP_BAD_REQUEST) {
         return new Response(
             json_encode([

@@ -14,6 +14,7 @@ class Storage {
     protected function getConnection(): PDO
     {
         if ($this->connection === null) {
+            //небольшое упрощение
             $dsn = 'mysql:host=mariadb;dbname=lamoda';
             $username = 'root';
             $passwd = 'root';
@@ -23,13 +24,12 @@ class Storage {
         return $this->connection;
     }
 
-
     /**
      * @param array $container
      * @return string
      * @throws Exception
      */
-    public function addContainer(array $container): int
+    public function storeContainer(array $container): int
     {
         try {
             $sql = 'INSERT INTO ContainerStorage SET container=%s;';
@@ -41,8 +41,13 @@ class Storage {
         return $this->getConnection()->lastInsertId();
     }
 
-
-    public function getContainer(int $limit, int $offset = 0): array
+    /**
+     * @param int $limit
+     * @param int $offset
+     * @return array
+     * @throws Exception
+     */
+    public function getContainerSlice(int $limit, int $offset = 0): array
     {
         $sql = 'SELECT id, container FROM ContainerStorage ORDER BY id ASC LIMIT %d OFFSET %d;';
         $sql = sprintf($sql, $limit, $offset);
@@ -50,6 +55,22 @@ class Storage {
             return $this->getConnection()->query($sql)->fetchAll();
         } catch (PDOException $e) {
             throw new Exception('Error get container: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * @param int $id
+     * @return array
+     * @throws Exception
+     */
+    public function getContainerById(int $id): array
+    {
+        $sql = 'SELECT id, container FROM ContainerStorage WHERE id=%d;';
+        $sql = sprintf($sql, $id);
+        try {
+            return $this->getConnection()->query($sql)->fetch();
+        } catch (PDOException $e) {
+            throw new Exception('Error get container by id: ' . $e->getMessage(), 0, $e);
         }
     }
 

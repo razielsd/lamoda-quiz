@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use App\Storage\Storage;
@@ -26,7 +28,10 @@ class FillCommand extends Command
     }
 
     /**
-     * {@inheritdoc}
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return void
+     * @throws \App\Storage\Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
@@ -36,7 +41,7 @@ class FillCommand extends Command
         $uniqItem = 100;
         for ($i = 0;$i < $totalContainer; $i++) {
             $container = $this->createContainer($uniqItem, $containerItemCount);
-            (new Storage())->addContainer($container);
+            (new Storage())->storeContainer($container);
         }
         $output->writeln("Added {$totalContainer} containers with {$containerItemCount}, uniq items: {$uniqItem}");
         $check = array_filter($this->map, function ($v) {return $v == 0;});
@@ -46,7 +51,6 @@ class FillCommand extends Command
             $output->writeln("Item Id not writen: " . join(', ', array_keys($check)));
         }
     }
-
 
     /**
      * @param int $uniqItem
@@ -70,7 +74,10 @@ class FillCommand extends Command
         return ['title' => $this->getDictString(), 'items' => $items];
     }
 
-
+    /**
+     * @param null $idx
+     * @return string
+     */
     protected function getDictString($idx = null): string
     {
         $dict = '5.56 Rifle Ammo

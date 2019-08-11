@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Command;
 
 use App\ApiClient\Client;
 use App\Search\Container;
 use App\Search\ContainerList;
+use App\Search\ContainerLoader;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,6 +26,7 @@ class SearchCommand extends Command
 
     /**
      * Максимальное кол-во контейнеров не подходящих контейнеров для ослабления условий подбора контейнеров
+     * + дельта в CHUNK_SIZE
      */
     const MAX_BAD_LEN = 1000;
 
@@ -55,9 +59,16 @@ class SearchCommand extends Command
     protected $client;
 
     /**
+     * @var ContainerLoader
+     */
+    protected $containerLoader;
+
+    /**
      * @var OutputInterface
      */
     protected $output;
+
+    protected $statId = [];
 
     /**
      * {@inheritdoc}
@@ -76,13 +87,16 @@ class SearchCommand extends Command
     {
         $this->output = $output;
         $this->client = new Client();
+        $this->containerLoader = new ContainerLoader($this->client);
+        $this->containerLoader->setChunkSize(self::CHUNK_SIZE);
+        $this->containerLoader->setMaxContainers(self::MAX_CONTAINERS);
         $containerItemCount = 10;
         $uniqItem = 100;
+        $this->statId = array_fill(1, $uniqItem, 0);
         for ($i=1;$i<$containerItemCount;$i++) {
             $this->processedIndex[$i] = [];
         }
         $this->greedyIndex = 0;
-
 
         $containerList = new ContainerList();
         $output->writeln("Start search ....");
@@ -90,7 +104,7 @@ class SearchCommand extends Command
             $found = $this->loadContainer($this->greedyIndex);
             //Если больше нет доступных контейнеров - делаем поиск менее жадным
             if ($found === 0) {
-                $output->writeln("All containers loaded, greedyIndex++");
+                $output->writeln("\nAll containers loaded, greedyIndex++");
                 $this->increaseGreedy();
             }
             //Если долго не можем найти подходящий контейнер - делаем поиск менее жадным
@@ -103,7 +117,7 @@ class SearchCommand extends Command
                 $output->writeln("Current index processed, greedyIndex++");
             }
             //дальше снижать жадность некуда, выходим
-            if ($this->greedyIndex >= ($containerItemCount - 1)) {
+            if ($this->greedyIndex >= $containerItemCount) {
                 $output->writeln('Cannot combine all items');
                 break;
             }
@@ -113,22 +127,31 @@ class SearchCommand extends Command
                 break;
             }
         }
-        $output->writeln('Items: ' . $containerList->getUniqIdCount());
-        $output->writeln('Containers: ' . $containerList->count());
+        $this->printResult($containerList);
+    }
+
+
+    protected function printResult(ContainerList $containerList)
+    {
+        $this->output->writeln('Items: ' . $containerList->getUniqIdCount());
+        $this->output->writeln('Containers: ' . $containerList->count());
         //проверяем, что все товары действительно нашли
         $map = $containerList->getUniqIdMap();
-        for ($i=1;$i<=100;$i++) {
+        for ($i = 1;$i <= 100;$i++) {
             if (!isset($map[$i])) {
-                $output->writeln("Not found: {$i}");
+                $this->output->writeln("Not found: {$i}");
             }
         }
+        //Проверяем, что все товары действительно были в контейнерах
+        $itemIdListEmpty = array_filter($this->statId, function ($id) {return empty($id);});
+        $this->output->writeln('Not found item Id (in stream): ' . join(', ', $itemIdListEmpty));
+
         /** @var Container $container */
         foreach ($containerList as $container) {
-            $output->writeln(
+            $this->output->writeln(
                 'ContainerID: ' . $container->getId() . ', items: ' . join(', ', $container->getItemIdList())
             );
         }
-
     }
 
 
@@ -157,13 +180,15 @@ class SearchCommand extends Command
         $this->processedIndex[$this->greedyIndex] = [];
     }
 
-
+    /**
+     * Загружаем контейнеры из сервиса
+     *
+     * @return int
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     protected function loadContainer(): int
     {
-        if ($this->containerCounter >= self::MAX_CONTAINERS) {
-            return 0;
-        }
-        $containerList = $this->client->getContainer(self::CHUNK_SIZE, $this->containerCounter);
+        $containerList = $this->containerLoader->load();
         $found = count($containerList);
         if ($found > 0) {
             $this->addToProcess($containerList);
@@ -172,21 +197,36 @@ class SearchCommand extends Command
         return $found;
     }
 
-
+    /**
+     * Добавить контейнеры в очередь обработки
+     *
+     * @param array $containerList
+     * @return SearchCommand
+     */
     protected function addToProcess(array $containerList): self
     {
         foreach ($containerList as $container) {
-            $this->processedIndex[$this->greedyIndex][] = new Container($container);
+            $container = new Container($container);
+            $this->processedIndex[$this->greedyIndex][] = $container;
+            //собираем статистику по id товаров
+            $idList = $container->getItemIdList();
+            foreach ($idList as $id) {
+                $this->statId[$id]++;
+            }
         }
         return $this;
     }
 
-
+    /**
+     * Уменьшаем жадность (увеличиваем кол-во разрешенных непопаданий)
+     *
+     * @return int
+     */
     protected function increaseGreedy(): int
     {
         ++$this->greedyIndex;
         $this->badCounter = 0;
-        $this->output->writeln('greedyIndex: ' . $this->greedyIndex);
+        $this->output->writeln('Decrease greedy: greedyIndex: ' . $this->greedyIndex);
         return $this->greedyIndex;
     }
 

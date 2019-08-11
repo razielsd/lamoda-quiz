@@ -28,9 +28,9 @@ class Client
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function getContainer(int $limit, int $offset = 0): array
+    public function getContainerSlice(int $limit, int $offset = 0): array
     {
-        $url = $this->createUrl('/container');
+        $url = $this->createUrl('/container/slice');
         $params = [
             'limit' => $limit,
             'offset' => $offset
@@ -48,6 +48,29 @@ class Client
         return json_decode($body, true);
     }
 
+    /**
+     * @param int $id
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function getContainerById(int $id): array
+    {
+        $url = $this->createUrl('/container');
+        $params = [
+            'id' => $id,
+        ];
+        try {
+            $resp = $this->getHttpClient()->request(
+                'GET',
+                $url,
+                ['query' => $params]
+            );
+        } catch (RequestException $e) {
+            throw new \Exception('Error due get container by id:' . $e->getMessage(), 0, $e);
+        }
+        $body = $resp->getBody()->getContents();
+        return json_decode($body, true);
+    }
 
     /**
      * Put container
@@ -74,7 +97,6 @@ class Client
         return $resp['id'];
     }
 
-
     /**
      * @param string $uri
      *
@@ -84,7 +106,6 @@ class Client
     {
         return \sprintf('http://%s%s', $this->host, $uri);
     }
-
 
     /**
      * @return HttpClient
@@ -96,7 +117,6 @@ class Client
         }
         return $this->httpClient;
     }
-
 
     /**
      * @return HttpClient
