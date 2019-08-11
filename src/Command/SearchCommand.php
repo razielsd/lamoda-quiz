@@ -101,7 +101,7 @@ class SearchCommand extends Command
         $containerList = new ContainerList();
         $output->writeln("Start search ....");
         while (true) {
-            $found = $this->loadContainer($this->greedyIndex);
+            $found = $this->loadContainer();
             //Если больше нет доступных контейнеров - делаем поиск менее жадным
             if ($found === 0) {
                 $output->writeln("\nAll containers loaded, greedyIndex++");
