@@ -101,7 +101,7 @@ class SearchCommand extends Command
         $containerList = new ContainerList();
         $output->writeln("Start search ....");
         while (true) {
-            $found = $this->loadContainer();
+            $found = $this->loadContainer($containerList->getUniqIdMap());
             //Если больше нет доступных контейнеров - делаем поиск менее жадным
             if ($found === 0) {
                 $output->writeln("\nAll containers loaded, greedyIndex++");
@@ -186,16 +186,65 @@ class SearchCommand extends Command
      * @return int
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    protected function loadContainer(): int
+    protected function loadContainer(array $uniqMap): int
     {
         $containerList = $this->containerLoader->load();
         $found = count($containerList);
         if ($found > 0) {
+            $containerList = $this->sortConainer($containerList, $uniqMap);
             $this->addToProcess($containerList);
             $this->containerCounter += $found;
         }
         return $found;
     }
+
+    /**
+     * Сортируем контейнеры, сначала контейнеры с наименее встречающимися товарами
+     *
+     * @param array $containerList
+     * @param $uniqMap
+     * @return array
+     */
+    protected function sortConainer(array $containerList, $uniqMap): array
+    {
+        $weightList = [];
+        /** @var Container $container */
+        $maxWeight = count($containerList);
+        $weightMap = [];
+        //считаем сколько каких товаров
+        foreach ($containerList as $idx => $container) {
+            $idList = array_column($container['items'], 'id');
+            foreach ($idList as $itemId) {
+                $weightMap[$itemId] = $weightMap[$itemId] ?? 0;
+                $weightMap[$itemId]++;
+            }
+        }
+        //расчитываем "вес" каждого контейнера для сортировки
+        //чем реже встречается товар - ниже вес
+        foreach ($containerList as $idx => $container) {
+            $idList = array_column($container['items'], 'id');
+            $weidth = 0;
+            foreach ($idList as $itemId) {
+                if (isset($uniqMap[$itemId])) {
+                    $weidth += $maxWeight;
+                } else {
+                    $weidth += $weightMap[$itemId];
+                }
+            }
+            $weightList[] = ['weight' => $weidth, 'container' => $container];
+        }
+
+        usort($weightList, function ($f, $s) {
+            return $f['weight'] > $s['weight'];
+        });
+        $result = [];
+        //сначала контейнеры с самыми редкими товарами
+        foreach ($weightList as $row) {
+            $result[] = $row['container'];
+        }
+        return $result;
+    }
+
 
     /**
      * Добавить контейнеры в очередь обработки
